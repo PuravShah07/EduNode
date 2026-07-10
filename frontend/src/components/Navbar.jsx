@@ -22,8 +22,9 @@ const Navbar = () => {
 
   return (
     <nav className='flex items-center justify-between p-6 max-w-[1200px] mx-auto w-full relative z-20 bg-transparent'>
-      <Link to='/' className='text-2xl font-bold font-heading text-ink-dark flex items-center'>
-        Quo<span className='text-accent-cyan'>ti</span>
+      <Link to='/' className='text-2xl font-bold font-heading text-ink-dark flex items-center gap-2'>
+        <img src="/logo.png" alt="EduNode Logo" className="h-8 w-8 object-contain" />
+        Edu<span className='text-accent-cyan'>Node</span>
       </Link>
       
       {/* Desktop Menu */}

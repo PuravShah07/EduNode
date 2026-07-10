@@ -242,11 +242,12 @@ const Home = () => {
       {/* Simple Footer */}
       <footer className="bg-ink-dark text-paper-white py-12 px-6 torn-paper-edge relative z-[2] mt-[-40px]">
         <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center mt-8">
-          <div className="text-2xl font-bold font-heading mb-4 md:mb-0">
-            Quo<span className="text-accent-cyan">ti</span>
+          <div className="text-2xl font-bold font-heading mb-4 md:mb-0 flex items-center gap-2">
+            <img src="/logo.png" alt="EduNode Logo" className="h-8 w-8 object-contain" />
+            Edu<span className="text-accent-cyan">Node</span>
           </div>
           <div className="text-sm font-medium text-gray-400">
-            &copy; {new Date().getFullYear()} Quoti Marketplace. All rights reserved.
+            &copy; {new Date().getFullYear()} EduNode Marketplace. All rights reserved.
           </div>
         </div>
       </footer>

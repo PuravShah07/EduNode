@@ -13,7 +13,8 @@ export const getMyEnrolledCourses = () => api.get('/enrollments/my-courses');
 export const getMyCreatedCourses = () => api.get('/courses/my-courses');
 
 export const getCourseMaterials = (courseId) => api.get(`/courses/${courseId}/materials`);
-export const uploadCourseMaterial = (courseId, formData) => api.post(`/courses/${courseId}/materials`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
+export const uploadCourseMaterial = (courseId, formData, onUploadProgress) => api.post(`/courses/${courseId}/materials`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress
 });
 export const deleteCourseMaterial = (materialId) => api.delete(`/courses/materials/${materialId}`);

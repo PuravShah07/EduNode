@@ -1,0 +1,47 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build and dependencies
+target/
+dist/
+dist-ssr/
+node_modules/
+build/
+out/
+.settings/
+.classpath
+.project
+
+# Local uploads and fallback media directories
+uploads/
+backend/uploads/
+backend/coursemaketplace/uploads/
+
+# Environment files and credentials
+.env
+.env.*
+!.env.example
+application.properties
+src/main/resources/application.properties
+
+# Logs
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*

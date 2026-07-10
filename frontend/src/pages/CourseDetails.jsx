@@ -23,6 +23,8 @@ const CourseDetails = () => {
   const [title, setTitle] = useState('');
   const [type, setType] = useState('PDF');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [compressing, setCompressing] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -76,18 +78,73 @@ const CourseDetails = () => {
     }
   };
 
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+
+    if (selectedFile.type.startsWith('image/')) {
+      setCompressing(true);
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          const maxDim = 1920;
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const compressedFile = new File([blob], selectedFile.name, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              setFile(compressedFile);
+            } else {
+              setFile(selectedFile);
+            }
+            setCompressing(false);
+          }, 'image/jpeg', 0.75);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(selectedFile);
+    } else {
+      setFile(selectedFile);
+    }
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) return alert('Please select a file');
 
     setUploading(true);
+    setUploadProgress(0);
     const formData = new FormData();
     formData.append('title', title);
     formData.append('type', type);
     formData.append('file', file);
 
     try {
-      await uploadCourseMaterial(id, formData);
+      await uploadCourseMaterial(id, formData, (progressEvent) => {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        setUploadProgress(percentCompleted);
+      });
       setTitle('');
       setFile(null);
       loadData(); // refresh materials
@@ -95,6 +152,7 @@ const CourseDetails = () => {
       alert('Failed to upload material');
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -114,24 +172,14 @@ const CourseDetails = () => {
     return <File className="text-ink-gray" />;
   };
 
-  const buildFileHref = (fileUrl) => {
-    if (!fileUrl) return '#';
-    if (fileUrl.startsWith('http')) {
-      if (API_BASE_URL.startsWith('/api_proxy')) {
-        try {
-          const urlObj = new URL(fileUrl);
-          return `${API_BASE_URL}${urlObj.pathname}`;
-        } catch (e) {
-          return fileUrl;
-        }
-      }
-      return fileUrl;
-    }
-    return `${API_BASE_URL}${fileUrl}`;
+  const buildFileHref = (mat) => {
+    if (!mat || !mat.id) return '#';
+    const token = localStorage.getItem('token');
+    return `${API_BASE_URL}/courses/materials/${mat.id}/file?token=${token}`;
   };
 
   const openVideo = (mat) => {
-    setActiveVideo({ id: mat.id, title: mat.title, url: buildFileHref(mat.fileUrl) });
+    setActiveVideo({ id: mat.id, title: mat.title, url: buildFileHref(mat) });
   };
 
   const closeVideo = () => {
@@ -139,7 +187,7 @@ const CourseDetails = () => {
   };
 
   const openDoc = (mat) => {
-    setActiveDoc({ id: mat.id, title: mat.title, url: buildFileHref(mat.fileUrl), type: mat.type });
+    setActiveDoc({ id: mat.id, title: mat.title, url: buildFileHref(mat), type: mat.type });
   };
 
   const closeDoc = () => {
@@ -216,11 +264,29 @@ const CourseDetails = () => {
                    <option value="DOC">Word Doc</option>
                    <option value="OTHER">Other</option>
                  </select>
-                 <input required type="file" onChange={(e) => setFile(e.target.files[0])} className="px-4 py-2 text-sm text-ink-gray" />
+                 <input required type="file" onChange={handleFileChange} className="px-4 py-2 text-sm text-ink-gray" />
                </div>
-               <button disabled={uploading} type="submit" className="bg-ink-dark text-white px-6 py-2 rounded-lg font-bold uppercase text-sm hover:bg-accent-cyan transition-colors disabled:opacity-50">
-                 {uploading ? 'Uploading...' : 'Submit Material'}
-               </button>
+               {uploading ? (
+                 <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-soft flex items-center gap-4 w-full">
+                   <div className="animate-spin rounded-full h-6 w-6 border-2 border-accent-cyan border-t-transparent flex-shrink-0"></div>
+                   <div className="flex-1">
+                     <div className="flex justify-between items-center mb-1">
+                       <span className="text-sm font-bold text-ink-dark">Uploading content...</span>
+                       <span className="text-sm font-black text-accent-cyan">{uploadProgress}%</span>
+                     </div>
+                     <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                       <div 
+                         className="bg-accent-cyan h-full rounded-full transition-all duration-300"
+                         style={{ width: `${uploadProgress}%` }}
+                       ></div>
+                     </div>
+                   </div>
+                 </div>
+               ) : (
+                 <button type="submit" disabled={compressing} className="bg-ink-dark text-white px-6 py-2 rounded-lg font-bold uppercase text-sm hover:bg-accent-cyan transition-colors disabled:opacity-50">
+                   {compressing ? 'Compressing...' : 'Submit Material'}
+                 </button>
+               )}
             </form>
           )}
 
@@ -250,7 +316,7 @@ const CourseDetails = () => {
                           {mat.title}
                         </button>
                       ) : (
-                        <a href={buildFileHref(mat.fileUrl)} target="_blank" rel="noreferrer" className="font-bold text-ink-dark hover:text-accent-cyan transition-colors">
+                        <a href={buildFileHref(mat)} target="_blank" rel="noreferrer" className="font-bold text-ink-dark hover:text-accent-cyan transition-colors">
                           {mat.title}
                         </a>
                       )}

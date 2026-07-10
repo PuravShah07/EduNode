@@ -1,14 +1,20 @@
 package com.purav.coursemaketplace.service;
 
+import com.purav.coursemaketplace.dto.UploadResult;
+import com.purav.coursemaketplace.entity.MaterialType;
+import com.purav.coursemaketplace.util.CryptoUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.util.Base64;
 import java.util.UUID;
 
 @Service
@@ -28,7 +34,19 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
     }
 
     @Override
-    public String storeFile(MultipartFile file, Long courseId) throws IOException {
+    public UploadResult storeFile(MultipartFile file, Long courseId) throws IOException {
+        // Generate encryption key and IV
+        SecretKey secretKey;
+        byte[] iv;
+        try {
+            secretKey = CryptoUtils.generateKey();
+            iv = CryptoUtils.generateIv();
+        } catch (Exception e) {
+            throw new RuntimeException("Could not generate encryption key", e);
+        }
+        String encKeyStr = Base64.getEncoder().encodeToString(secretKey.getEncoded());
+        String encIvStr = Base64.getEncoder().encodeToString(iv);
+
         // Clean off any unexpected sequence in original filename
         String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown.file");
         
@@ -41,23 +59,29 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
             Files.createDirectories(courseFolder);
         }
 
-        // Copy file
+        // Copy encrypted file
         Path targetLocation = courseFolder.resolve(newFilename);
-        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+        try (InputStream is = file.getInputStream();
+             OutputStream os = Files.newOutputStream(targetLocation)) {
+            CryptoUtils.encryptStream(is, os, secretKey, iv);
+        } catch (Exception e) {
+            throw new IOException("Encryption error during local file upload", e);
+        }
 
-        // Return the pseudo-URL for the DB
-        return "/uploads/" + courseId + "/" + newFilename;
+        // Return the pseudo-URL for the DB (using the URL as both URL and public ID)
+        String url = "/uploads/" + courseId + "/" + newFilename;
+        return new UploadResult(url, url, encKeyStr, encIvStr);
     }
 
     @Override
-    public void deleteFile(String fileUrl) {
-        if (fileUrl != null && fileUrl.startsWith("/uploads/")) {
+    public void deleteFile(String publicId, MaterialType materialType) {
+        if (publicId != null && publicId.startsWith("/uploads/")) {
             try {
                 // remove leading slash to resolve to correct relative directory
-                Path filePath = Paths.get(fileUrl.substring(1)); 
+                Path filePath = Paths.get(publicId.substring(1)); 
                 Files.deleteIfExists(filePath);
             } catch (IOException e) {
-                throw new RuntimeException("Could not delete file locally: " + fileUrl, e);
+                throw new RuntimeException("Could not delete file locally: " + publicId, e);
             }
         }
     }

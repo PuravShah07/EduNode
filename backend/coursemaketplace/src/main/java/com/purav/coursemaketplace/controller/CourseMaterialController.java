@@ -57,4 +57,24 @@ public class CourseMaterialController {
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(courseMaterialService.getCourseMaterials(courseId, currentUser));
     }
+
+    @GetMapping("/materials/{materialId}/file")
+    public ResponseEntity<org.springframework.core.io.Resource> getDecryptedMaterial(
+            @PathVariable Long materialId,
+            @AuthenticationPrincipal User currentUser) {
+        try {
+            com.purav.coursemaketplace.dto.DecryptedResourceResult result = courseMaterialService.getDecryptedMaterial(materialId, currentUser);
+            
+            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+            headers.setContentType(org.springframework.http.MediaType.parseMediaType(result.getContentType()));
+            headers.setContentLength(result.getFileSize());
+            headers.add(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + result.getFilename() + "\"");
+            
+            return org.springframework.http.ResponseEntity.ok()
+                    .headers(headers)
+                    .body(result.getResource());
+        } catch (Exception e) {
+            return org.springframework.http.ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN).build();
+        }
+    }
 }
