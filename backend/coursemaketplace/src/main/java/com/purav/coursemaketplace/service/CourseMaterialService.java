@@ -364,6 +364,7 @@ public class CourseMaterialService {
                 .type(material.getType())
                 .fileUrl(material.getFileUrl())
                 .courseId(material.getCourse().getId())
+                .fileSize(material.getFileSize())
                 .build();
     }
 

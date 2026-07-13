@@ -82,6 +82,22 @@ const CourseDetails = () => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
 
+    // Auto-detect type
+    const ext = selectedFile.name.split('.').pop().toLowerCase();
+    let detectedType = 'OTHER';
+    if (ext === 'pdf') {
+      detectedType = 'PDF';
+    } else if (['mp4', 'webm', 'mkv', 'mov', 'avi'].includes(ext)) {
+      detectedType = 'VIDEO';
+    } else if (['doc', 'docx'].includes(ext)) {
+      detectedType = 'DOC';
+    }
+    setType(detectedType);
+
+    // Auto-fill title if empty
+    const baseName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.'));
+    setTitle(baseName);
+
     if (selectedFile.type.startsWith('image/')) {
       setCompressing(true);
       const reader = new FileReader();
@@ -209,6 +225,14 @@ const CourseDetails = () => {
 
   const isInstructor = user?.role === 'ROLE_INSTRUCTOR' && user?.id === course.instructorId;
 
+  // Compute course storage metrics
+  const totalStorageBytes = 150 * 1024 * 1024;
+  const usedStorageBytes = materials.reduce((acc, mat) => acc + (mat.fileSize || 0), 0);
+  const remainingStorageBytes = Math.max(0, totalStorageBytes - usedStorageBytes);
+  const usedMB = (usedStorageBytes / (1024 * 1024)).toFixed(1);
+  const remainingMB = (remainingStorageBytes / (1024 * 1024)).toFixed(1);
+  const usagePercent = Math.min(100, (usedStorageBytes / totalStorageBytes) * 100).toFixed(1);
+
   return (
     <div className="min-h-screen bg-paper-offwhite pb-20">
       <Navbar />
@@ -256,31 +280,51 @@ const CourseDetails = () => {
           </h2>
 
           {isInstructor && (
+            <div className="mb-8 p-6 bg-paper-light rounded-2xl border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="text-sm font-black text-ink-dark uppercase tracking-wider mb-1">Course Storage Status</div>
+                <div className="text-sm text-ink-gray font-medium">
+                  You have <span className="font-bold text-accent-coral">{remainingMB} MB</span> left out of <span className="font-bold text-ink-dark">150 MB</span> ({usedMB} MB used)
+                </div>
+              </div>
+              <div className="w-full md:w-64">
+                <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden mb-1">
+                  <div 
+                    className={`h-full rounded-full transition-all duration-500 shadow-sm ${
+                      parseFloat(usagePercent) > 90 ? 'bg-accent-coral' : parseFloat(usagePercent) > 70 ? 'bg-yellow-500' : 'bg-accent-cyan'
+                    }`}
+                    style={{ width: `${usagePercent}%` }}
+                  ></div>
+                </div>
+                <div className="text-[10px] text-right font-bold text-ink-gray">{usagePercent}% full</div>
+              </div>
+            </div>
+          )}
+
+          {isInstructor && (
             <form onSubmit={handleUpload} className="bg-paper-light p-6 rounded-xl mb-8 border border-dashed border-gray-300">
                <h3 className="font-bold uppercase text-sm mb-4 text-ink-dark flex items-center gap-2">
-                 <UploadCloud size={16} /> Upload New Material
+                 <UploadCloud size={16} /> Upload New Material 
+                 {file && <span className="text-xs font-bold text-accent-cyan lowercase bg-accent-cyan/10 px-2 py-0.5 rounded">({type} detected)</span>}
                </h3>
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                 <input required type="text" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="px-4 py-2 rounded-lg border focus:border-accent-cyan outline-none" />
-                 <select value={type} onChange={(e) => setType(e.target.value)} className="px-4 py-2 rounded-lg border focus:border-accent-cyan outline-none bg-white">
-                   <option value="PDF">PDF Document</option>
-                   <option value="VIDEO">Video</option>
-                   <option value="DOC">Word Doc</option>
-                   <option value="OTHER">Other</option>
-                 </select>
-                 <input required type="file" onChange={handleFileChange} className="px-4 py-2 text-sm text-ink-gray" />
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                 <input required type="text" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} className="px-4 py-2 rounded-lg border focus:border-accent-cyan outline-none font-medium text-sm" />
+                 <input required type="file" onChange={handleFileChange} className="px-4 py-1.5 text-sm text-ink-gray bg-white rounded-lg border border-gray-200 outline-none" />
                </div>
                {uploading ? (
-                 <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200 shadow-soft flex items-center gap-4 w-full">
-                   <div className="animate-spin rounded-full h-6 w-6 border-2 border-accent-cyan border-t-transparent flex-shrink-0"></div>
+                 <div className="mt-4 p-5 bg-gradient-to-r from-ink-dark to-gray-900 text-white rounded-xl shadow-soft-hover flex items-center gap-5 w-full border border-gray-800 animate-pulse">
+                   <div className="relative flex items-center justify-center flex-shrink-0">
+                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent-cyan border-t-transparent"></div>
+                     <div className="absolute text-[10px] font-black uppercase tracking-tighter text-accent-cyan">UP</div>
+                   </div>
                    <div className="flex-1">
-                     <div className="flex justify-between items-center mb-1">
-                       <span className="text-sm font-bold text-ink-dark">Uploading content...</span>
-                       <span className="text-sm font-black text-accent-cyan">{uploadProgress}%</span>
+                     <div className="flex justify-between items-center mb-2">
+                       <span className="text-sm font-black uppercase tracking-wider text-gray-200">Uploading File...</span>
+                       <span className="text-sm font-black text-accent-cyan tracking-wider">{uploadProgress}%</span>
                      </div>
-                     <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                     <div className="w-full bg-white/10 rounded-full h-2.5 overflow-hidden">
                        <div 
-                         className="bg-accent-cyan h-full rounded-full transition-all duration-300"
+                         className="bg-accent-cyan h-full rounded-full shadow-[0_0_8px_#38bdf8] transition-all duration-300 ease-out"
                          style={{ width: `${uploadProgress}%` }}
                        ></div>
                      </div>

@@ -14,4 +14,5 @@ public class CourseMaterialResponse {
     private MaterialType type;
     private String fileUrl;
     private Long courseId;
+    private Long fileSize;
 }
