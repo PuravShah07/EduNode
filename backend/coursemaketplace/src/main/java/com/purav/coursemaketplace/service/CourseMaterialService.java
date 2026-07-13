@@ -69,8 +69,15 @@ public class CourseMaterialService {
             throw new RuntimeException("Upload failed: File size (" + String.format("%.2f", newFileSize / (1024.0 * 1024.0)) + " MB) exceeds the maximum allowed limit of 50 MB.");
         }
 
+        // Reject dangerous/double extensions (e.g. virus.exe.jpg, image.php)
+        String lowerName = originalFilename.toLowerCase();
+        if (lowerName.contains(".exe") || lowerName.contains(".php") || lowerName.contains(".js") || 
+            lowerName.contains(".sh") || lowerName.contains(".bat") || lowerName.contains(".jsp") ||
+            lowerName.contains(".asp")) {
+            throw new RuntimeException("Upload failed: Dangerous file name.");
+        }
+
         // Extension Check (Whitelist: jpg, jpeg, png, pdf, docx, mp4)
-        String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "";
         int dotIndex = originalFilename.lastIndexOf('.');
         if (dotIndex == -1) {
             throw new RuntimeException("Upload failed: File must have an extension.");
@@ -80,6 +87,9 @@ public class CourseMaterialService {
         if (!allowedExtensions.contains(extension)) {
             throw new RuntimeException("Upload failed: Extension ." + extension + " is not allowed. Allowed types: jpg, jpeg, png, pdf, docx, mp4");
         }
+
+        // Validate MIME type & magic numbers
+        validateFileContent(file, extension);
 
         // 150 MB Cumulative Course Limit Validation
         long currentTotalSize = courseMaterialRepository.sumFileSizeByCourseId(courseId);
@@ -335,5 +345,53 @@ public class CourseMaterialService {
                 .fileUrl(material.getFileUrl())
                 .courseId(material.getCourse().getId())
                 .build();
+    }
+
+    private void validateFileContent(MultipartFile file, String extension) throws IOException {
+        String mime = file.getContentType();
+        if (mime == null) {
+            throw new RuntimeException("Upload failed: Missing MIME type.");
+        }
+
+        // Validate MIME type matches extension
+        boolean mimeMatch = switch (extension) {
+            case "pdf" -> mime.equals("application/pdf");
+            case "png" -> mime.equals("image/png");
+            case "jpg", "jpeg" -> mime.equals("image/jpeg");
+            case "docx" -> mime.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            case "mp4" -> mime.equals("video/mp4");
+            default -> false;
+        };
+        if (!mimeMatch) {
+            throw new RuntimeException("Upload failed: MIME type does not match extension.");
+        }
+
+        // Verify Magic Numbers (File signatures)
+        try (InputStream is = file.getInputStream()) {
+            byte[] bytes = new byte[12];
+            int read = is.read(bytes);
+            if (read < 4) {
+                throw new RuntimeException("Upload failed: File is too small.");
+            }
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < read; i++) {
+                sb.append(String.format("%02X", bytes[i]));
+            }
+            String hex = sb.toString();
+
+            boolean signatureMatch = switch (extension) {
+                case "pdf" -> hex.startsWith("25504446"); // %PDF
+                case "png" -> hex.startsWith("89504E47"); // PNG
+                case "jpg", "jpeg" -> hex.startsWith("FFD8FF"); // JPEG
+                case "docx" -> hex.startsWith("504B0304"); // ZIP
+                case "mp4" -> hex.length() >= 24 && hex.substring(8, 24).startsWith("66747970"); // ftyp
+                default -> false;
+            };
+
+            if (!signatureMatch) {
+                throw new RuntimeException("Upload failed: Magic numbers do not match file extension.");
+            }
+        }
     }
 }
