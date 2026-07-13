@@ -56,8 +56,10 @@ public class CloudinaryFileStorageServiceImpl implements FileStorageService {
 
         if (cloudinary == null) {
             // Local fallback logic
-            String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown.file");
-            String newFilename = UUID.randomUUID().toString() + "_" + originalFilename;
+            String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+            int dotIndex = originalFilename.lastIndexOf('.');
+            String extension = dotIndex == -1 ? "" : originalFilename.substring(dotIndex + 1).toLowerCase();
+            String newFilename = UUID.randomUUID().toString() + (extension.isEmpty() ? "" : "." + extension);
             Path courseFolder = Paths.get(uploadDirPath, String.valueOf(courseId));
             if (!Files.exists(courseFolder)) {
                 Files.createDirectories(courseFolder);

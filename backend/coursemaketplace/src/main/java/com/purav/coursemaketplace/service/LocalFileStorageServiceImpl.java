@@ -48,10 +48,12 @@ public class LocalFileStorageServiceImpl implements FileStorageService {
         String encIvStr = Base64.getEncoder().encodeToString(iv);
 
         // Clean off any unexpected sequence in original filename
-        String originalFilename = StringUtils.cleanPath(file.getOriginalFilename() != null ? file.getOriginalFilename() : "unknown.file");
+        String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        int dotIndex = originalFilename.lastIndexOf('.');
+        String extension = dotIndex == -1 ? "" : originalFilename.substring(dotIndex + 1).toLowerCase();
         
-        // Ensure name is absolutely unique
-        String newFilename = UUID.randomUUID().toString() + "_" + originalFilename;
+        // Ensure name is absolutely unique and contains no user input
+        String newFilename = UUID.randomUUID().toString() + (extension.isEmpty() ? "" : "." + extension);
 
         // Group files by course ID into sub-folders
         Path courseFolder = Paths.get(uploadDirPath, String.valueOf(courseId));
