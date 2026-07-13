@@ -10,6 +10,7 @@ import com.purav.coursemaketplace.entity.User;
 import com.purav.coursemaketplace.repository.CourseMaterialRepository;
 import com.purav.coursemaketplace.repository.CourseRepository;
 import com.purav.coursemaketplace.repository.EnrollmentRepository;
+import com.purav.coursemaketplace.security.RateLimiterService;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.FileSystemResource;
@@ -34,15 +35,18 @@ public class CourseMaterialService {
     private final CourseRepository courseRepository;
     private final FileStorageService fileStorageService;
     private final EnrollmentRepository enrollmentRepository;
+    private final RateLimiterService rateLimiterService;
 
     public CourseMaterialService(CourseMaterialRepository courseMaterialRepository,
                                  CourseRepository courseRepository,
                                  FileStorageService fileStorageService,
-                                 EnrollmentRepository enrollmentRepository) {
+                                 EnrollmentRepository enrollmentRepository,
+                                 RateLimiterService rateLimiterService) {
         this.courseMaterialRepository = courseMaterialRepository;
         this.courseRepository = courseRepository;
         this.fileStorageService = fileStorageService;
         this.enrollmentRepository = enrollmentRepository;
+        this.rateLimiterService = rateLimiterService;
     }
 
     public CourseMaterialResponse uploadMaterial(Long courseId, String title, MaterialType type, MultipartFile file, User instructor) throws IOException {
@@ -53,9 +57,32 @@ public class CourseMaterialService {
             throw new RuntimeException("You are not authorized to add materials to this course");
         }
 
-        // 150 MB Course Limit Validation
-        long currentTotalSize = courseMaterialRepository.sumFileSizeByCourseId(courseId);
+        // Rate Limit Check (20 req/min/user)
+        if (!rateLimiterService.isAllowed(instructor.getEmail())) {
+            throw new RuntimeException("Rate limit exceeded! Maximum 20 upload requests per minute allowed.");
+        }
+
+        // Single-File Request Size Limit Check (50 MB)
         long newFileSize = file.getSize();
+        long maxFileSize = 50L * 1024 * 1024; // 50 MB in bytes
+        if (newFileSize > maxFileSize) {
+            throw new RuntimeException("Upload failed: File size (" + String.format("%.2f", newFileSize / (1024.0 * 1024.0)) + " MB) exceeds the maximum allowed limit of 50 MB.");
+        }
+
+        // Extension Check (Whitelist: jpg, jpeg, png, pdf, docx, mp4)
+        String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "";
+        int dotIndex = originalFilename.lastIndexOf('.');
+        if (dotIndex == -1) {
+            throw new RuntimeException("Upload failed: File must have an extension.");
+        }
+        String extension = originalFilename.substring(dotIndex + 1).toLowerCase();
+        java.util.Set<String> allowedExtensions = java.util.Set.of("jpg", "jpeg", "png", "pdf", "docx", "mp4");
+        if (!allowedExtensions.contains(extension)) {
+            throw new RuntimeException("Upload failed: Extension ." + extension + " is not allowed. Allowed types: jpg, jpeg, png, pdf, docx, mp4");
+        }
+
+        // 150 MB Cumulative Course Limit Validation
+        long currentTotalSize = courseMaterialRepository.sumFileSizeByCourseId(courseId);
         long limit = 150L * 1024 * 1024; // 150 MB in bytes
 
         if (currentTotalSize + newFileSize > limit) {
@@ -66,12 +93,11 @@ public class CourseMaterialService {
         UploadResult uploadResult = fileStorageService.storeFile(file, courseId);
 
         // Save reference in MySQL
-        String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
         CourseMaterial material = CourseMaterial.builder()
                 .title(title)
                 .type(type)
                 .fileUrl(uploadResult.getUrl())
-                .originalFilename(originalFilename)
+                .originalFilename(originalFilename.isEmpty() ? "file" : originalFilename)
                 .fileSize(newFileSize)
                 .publicId(uploadResult.getPublicId())
                 .encryptionKey(uploadResult.getEncryptionKey())
@@ -262,10 +288,10 @@ public class CourseMaterialService {
         }
     }
 
-    /**
-     * Determines MIME type from the file extension of the original filename.
-     * This avoids probing a .tmp file which always returns application/octet-stream.
-     */
+    /*
+      Determines MIME type from the file extension of the original filename.
+      This avoids probing a .tmp file which always returns application/octet-stream.
+    */  
     private String getMimeTypeFromFilename(String filename) {
         if (filename == null || !filename.contains(".")) return "application/octet-stream";
         String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
