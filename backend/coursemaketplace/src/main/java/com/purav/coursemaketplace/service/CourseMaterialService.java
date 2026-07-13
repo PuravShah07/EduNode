@@ -11,6 +11,11 @@ import com.purav.coursemaketplace.repository.CourseMaterialRepository;
 import com.purav.coursemaketplace.repository.CourseRepository;
 import com.purav.coursemaketplace.repository.EnrollmentRepository;
 import com.purav.coursemaketplace.security.RateLimiterService;
+import com.purav.coursemaketplace.security.MalwareScanner;
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.FileSystemResource;
@@ -36,17 +41,20 @@ public class CourseMaterialService {
     private final FileStorageService fileStorageService;
     private final EnrollmentRepository enrollmentRepository;
     private final RateLimiterService rateLimiterService;
+    private final MalwareScanner malwareScanner;
 
     public CourseMaterialService(CourseMaterialRepository courseMaterialRepository,
                                  CourseRepository courseRepository,
                                  FileStorageService fileStorageService,
                                  EnrollmentRepository enrollmentRepository,
-                                 RateLimiterService rateLimiterService) {
+                                 RateLimiterService rateLimiterService,
+                                 MalwareScanner malwareScanner) {
         this.courseMaterialRepository = courseMaterialRepository;
         this.courseRepository = courseRepository;
         this.fileStorageService = fileStorageService;
         this.enrollmentRepository = enrollmentRepository;
         this.rateLimiterService = rateLimiterService;
+        this.malwareScanner = malwareScanner;
     }
 
     public CourseMaterialResponse uploadMaterial(Long courseId, String title, MaterialType type, MultipartFile file, User instructor) throws IOException {
@@ -93,6 +101,15 @@ public class CourseMaterialService {
 
         // Validate MIME type & magic numbers
         validateFileContent(file, extension);
+
+        // Malware Scan (using ClamAV or mock scanner)
+        malwareScanner.scan(file);
+
+        // Strip EXIF Metadata / Validate Image Content
+        if (extension.equals("jpg") || extension.equals("jpeg") || extension.equals("png")) {
+            file = stripImageMetadata(file, extension);
+            newFileSize = file.getSize();
+        }
 
         // 150 MB Cumulative Course Limit Validation
         long currentTotalSize = courseMaterialRepository.sumFileSizeByCourseId(courseId);
@@ -405,5 +422,48 @@ public class CourseMaterialService {
         // Replace spaces and special characters with underscores, keeping dots, dashes, and underscores
         String clean = name.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
         return clean.isEmpty() ? "file" : clean;
+    }
+
+    private MultipartFile stripImageMetadata(MultipartFile file, String extension) {
+        try (InputStream is = file.getInputStream()) {
+            BufferedImage img = ImageIO.read(is);
+            if (img == null) {
+                throw new RuntimeException("Upload failed: Invalid or corrupt image file.");
+            }
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            String format = extension.equals("png") ? "png" : "jpeg";
+            ImageIO.write(img, format, bos);
+            byte[] bytes = bos.toByteArray();
+            return new CustomMultipartFile(file.getName(), file.getOriginalFilename(), file.getContentType(), bytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Upload failed: Image verification failed.", e);
+        }
+    }
+
+    private static class CustomMultipartFile implements MultipartFile {
+        private final String name;
+        private final String originalFilename;
+        private final String contentType;
+        private final byte[] content;
+
+        public CustomMultipartFile(String name, String originalFilename, String contentType, byte[] content) {
+            this.name = name;
+            this.originalFilename = originalFilename;
+            this.contentType = contentType;
+            this.content = content;
+        }
+
+        @Override public String getName() { return name; }
+        @Override public String getOriginalFilename() { return originalFilename; }
+        @Override public String getContentType() { return contentType; }
+        @Override public boolean isEmpty() { return content == null || content.length == 0; }
+        @Override public long getSize() { return content.length; }
+        @Override public byte[] getBytes() throws IOException { return content; }
+        @Override public InputStream getInputStream() throws IOException { return new ByteArrayInputStream(content); }
+        @Override public void transferTo(java.io.File dest) throws IOException, IllegalStateException {
+            try (OutputStream os = Files.newOutputStream(dest.toPath())) {
+                os.write(content);
+            }
+        }
     }
 }

@@ -9,12 +9,5 @@ import java.nio.file.Paths;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        Path uploadDir = Paths.get("uploads").toAbsolutePath();
-        String uploadPath = uploadDir.toUri().toString();
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(uploadPath);
-    }
+    // Statically mapping uploads folder is disabled for security (prevent execution/direct download of raw files)
 }
