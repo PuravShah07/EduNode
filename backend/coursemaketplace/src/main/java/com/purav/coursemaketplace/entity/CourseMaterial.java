@@ -26,6 +26,8 @@ public class CourseMaterial {
 
     private String fileUrl; 
 
+    private String originalFilename; // original file name from uploader
+
     private Long fileSize; // size in bytes
 
     private String publicId; // Cloudinary public_id or local filename path

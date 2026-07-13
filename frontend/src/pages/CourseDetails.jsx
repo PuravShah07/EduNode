@@ -4,7 +4,7 @@ import Navbar from '../components/Navbar';
 import { getCourse, enrollInCourse, getCourseMaterials, uploadCourseMaterial, deleteCourseMaterial } from '../api/courses';
 import { getMe } from '../api/auth';
 import { API_BASE_URL } from '../api/axiosConfig';
-import { FileText, Video, File, Trash2, UploadCloud, ChevronLeft, Rocket, Layers } from 'lucide-react';
+import { FileText, Video, File, Trash2, UploadCloud, ChevronLeft, Rocket, Layers, Download } from 'lucide-react';
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -172,10 +172,14 @@ const CourseDetails = () => {
     return <File className="text-ink-gray" />;
   };
 
-  const buildFileHref = (mat) => {
+  const buildFileHref = (mat, forceDownload = false) => {
     if (!mat || !mat.id) return '#';
     const token = localStorage.getItem('token');
-    return `${API_BASE_URL}/courses/materials/${mat.id}/file?token=${token}`;
+    let url = `${API_BASE_URL}/courses/materials/${mat.id}/file?token=${token}`;
+    if (forceDownload) {
+      url += '&download=true';
+    }
+    return url;
   };
 
   const openVideo = (mat) => {
@@ -187,7 +191,7 @@ const CourseDetails = () => {
   };
 
   const openDoc = (mat) => {
-    setActiveDoc({ id: mat.id, title: mat.title, url: buildFileHref(mat), type: mat.type });
+    window.open(buildFileHref(mat), '_blank', 'noopener,noreferrer');
   };
 
   const closeDoc = () => {
@@ -309,28 +313,39 @@ const CourseDetails = () => {
                 <li key={mat.id} className="p-4 bg-paper-offwhite rounded-xl hover:bg-gray-100 transition-colors border border-gray-100">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                    {getIcon(mat.type)}
-                    <div>
-                      {mat.type === 'PDF' ? (
-                        <button onClick={() => openDoc(mat)} className="font-bold text-ink-dark hover:text-accent-cyan transition-colors">
-                          {mat.title}
-                        </button>
-                      ) : (
-                        <a href={buildFileHref(mat)} target="_blank" rel="noreferrer" className="font-bold text-ink-dark hover:text-accent-cyan transition-colors">
-                          {mat.title}
-                        </a>
-                      )}
-                      <span className="text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded ml-3">
-                        {mat.type}
-                      </span>
+                      {getIcon(mat.type)}
+                      <div>
+                        {mat.type === 'PDF' ? (
+                          <button onClick={() => openDoc(mat)} className="font-bold text-ink-dark hover:text-accent-cyan transition-colors text-left">
+                            {mat.title}
+                          </button>
+                        ) : mat.type === 'VIDEO' ? (
+                          <button onClick={() => openVideo(mat)} className="font-bold text-ink-dark hover:text-accent-cyan transition-colors text-left">
+                            {mat.title}
+                          </button>
+                        ) : (
+                          <a href={buildFileHref(mat)} target="_blank" rel="noreferrer" className="font-bold text-ink-dark hover:text-accent-cyan transition-colors">
+                            {mat.title}
+                          </a>
+                        )}
+                        <span className="text-xs font-bold text-gray-400 bg-white px-2 py-0.5 rounded ml-3">
+                          {mat.type}
+                        </span>
+                      </div>
                     </div>
-                  </div>
                     <div className="flex items-center gap-2">
                       {mat.type === 'VIDEO' && (
                         <button onClick={() => openVideo(mat)} className="px-3 py-2 rounded-lg bg-white border border-gray-200 font-bold uppercase text-xs hover:bg-paper-light">
                           Play
                         </button>
                       )}
+                      <a 
+                        href={buildFileHref(mat, true)} 
+                        download
+                        className="px-3 py-2 rounded-lg bg-white border border-gray-200 font-bold uppercase text-xs hover:bg-paper-light flex items-center gap-1 text-ink-dark"
+                      >
+                        <Download size={12} /> Download
+                      </a>
                       {isInstructor && (
                         <button onClick={() => handleDeleteMaterial(mat.id)} className="text-accent-coral hover:bg-red-50 p-2 rounded-lg transition-colors">
                           <Trash2 size={18} />

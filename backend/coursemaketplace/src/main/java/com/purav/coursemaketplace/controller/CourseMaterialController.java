@@ -61,6 +61,7 @@ public class CourseMaterialController {
     @GetMapping("/materials/{materialId}/file")
     public ResponseEntity<org.springframework.core.io.Resource> getDecryptedMaterial(
             @PathVariable Long materialId,
+            @RequestParam(value = "download", required = false) Boolean download,
             @AuthenticationPrincipal User currentUser) {
         try {
             com.purav.coursemaketplace.dto.DecryptedResourceResult result = courseMaterialService.getDecryptedMaterial(materialId, currentUser);
@@ -68,7 +69,9 @@ public class CourseMaterialController {
             org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
             headers.setContentType(org.springframework.http.MediaType.parseMediaType(result.getContentType()));
             headers.setContentLength(result.getFileSize());
-            headers.add(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + result.getFilename() + "\"");
+            
+            String disposition = (download != null && download) ? "attachment" : "inline";
+            headers.add(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + result.getFilename() + "\"");
             
             return org.springframework.http.ResponseEntity.ok()
                     .headers(headers)

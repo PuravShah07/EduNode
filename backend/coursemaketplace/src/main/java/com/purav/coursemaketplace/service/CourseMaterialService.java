@@ -66,10 +66,12 @@ public class CourseMaterialService {
         UploadResult uploadResult = fileStorageService.storeFile(file, courseId);
 
         // Save reference in MySQL
+        String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
         CourseMaterial material = CourseMaterial.builder()
                 .title(title)
                 .type(type)
                 .fileUrl(uploadResult.getUrl())
+                .originalFilename(originalFilename)
                 .fileSize(newFileSize)
                 .publicId(uploadResult.getPublicId())
                 .encryptionKey(uploadResult.getEncryptionKey())
@@ -196,11 +198,18 @@ public class CourseMaterialService {
                 CryptoUtils.decryptStream(is, os, key, iv);
             }
 
-            // 3. Setup FileSystemResource with auto cleanup on stream close
-            String filename = material.getFileUrl().substring(material.getFileUrl().lastIndexOf("/") + 1);
-            if (filename.contains("_")) {
-                filename = filename.substring(filename.indexOf("_") + 1);
+            // 3. Derive the correct filename and content-type from the stored original filename
+            String filename;
+            if (material.getOriginalFilename() != null && !material.getOriginalFilename().isBlank()) {
+                filename = material.getOriginalFilename();
+            } else {
+                // Fallback: strip UUID prefix from stored URL path
+                filename = material.getFileUrl().substring(material.getFileUrl().lastIndexOf("/") + 1);
+                if (filename.contains("_")) {
+                    filename = filename.substring(filename.indexOf("_") + 1);
+                }
             }
+            String contentType = getMimeTypeFromFilename(filename);
 
             final Path toDeleteEnc = tempEncrypted;
             final Path toDeleteDec = tempDecrypted;
@@ -226,7 +235,7 @@ public class CourseMaterialService {
             return com.purav.coursemaketplace.dto.DecryptedResourceResult.builder()
                     .resource(resource)
                     .filename(filename)
-                    .contentType(probeContentType(tempDecrypted))
+                    .contentType(contentType)
                     .fileSize(Files.size(tempDecrypted))
                     .build();
 
@@ -251,6 +260,36 @@ public class CourseMaterialService {
         } catch (IOException e) {
             return "application/octet-stream";
         }
+    }
+
+    /**
+     * Determines MIME type from the file extension of the original filename.
+     * This avoids probing a .tmp file which always returns application/octet-stream.
+     */
+    private String getMimeTypeFromFilename(String filename) {
+        if (filename == null || !filename.contains(".")) return "application/octet-stream";
+        String ext = filename.substring(filename.lastIndexOf('.') + 1).toLowerCase();
+        return switch (ext) {
+            case "pdf"  -> "application/pdf";
+            case "mp4"  -> "video/mp4";
+            case "webm" -> "video/webm";
+            case "mov"  -> "video/quicktime";
+            case "avi"  -> "video/x-msvideo";
+            case "mkv"  -> "video/x-matroska";
+            case "jpg", "jpeg" -> "image/jpeg";
+            case "png"  -> "image/png";
+            case "gif"  -> "image/gif";
+            case "doc"  -> "application/msword";
+            case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+            case "xls"  -> "application/vnd.ms-excel";
+            case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            case "ppt"  -> "application/vnd.ms-powerpoint";
+            case "pptx" -> "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+            case "zip"  -> "application/zip";
+            case "txt"  -> "text/plain";
+            case "mp3"  -> "audio/mpeg";
+            default     -> "application/octet-stream";
+        };
     }
 
     private String getFilenameFromUrl(String url) {
