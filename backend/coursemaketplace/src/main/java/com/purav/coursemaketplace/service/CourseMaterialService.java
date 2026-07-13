@@ -53,6 +53,9 @@ public class CourseMaterialService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Course not found"));
 
+        String rawName = file.getOriginalFilename() != null ? file.getOriginalFilename() : "file";
+        String originalFilename = sanitizeFilename(rawName);
+
         if (!course.getInstructor().getId().equals(instructor.getId())) {
             throw new RuntimeException("You are not authorized to add materials to this course");
         }
@@ -393,5 +396,14 @@ public class CourseMaterialService {
                 throw new RuntimeException("Upload failed: Magic numbers do not match file extension.");
             }
         }
+    }
+
+    private String sanitizeFilename(String filename) {
+        if (filename == null) return "file";
+        // Get only the name, ignore paths
+        String name = new java.io.File(filename).getName();
+        // Replace spaces and special characters with underscores, keeping dots, dashes, and underscores
+        String clean = name.replaceAll("[^a-zA-Z0-9\\.\\-_]", "_");
+        return clean.isEmpty() ? "file" : clean;
     }
 }
