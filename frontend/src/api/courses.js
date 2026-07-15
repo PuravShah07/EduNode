@@ -24,3 +24,6 @@ export const updateEnrollmentProgress = (id, progress, completed) =>
     api.put(`/enrollments/${id}/progress?progress=${progress}&completed=${completed}`);
 export const updateEnrollmentRating = (id, rating) => 
     api.put(`/enrollments/${id}/rate?rating=${rating}`);
+
+export const createPaymentOrder = (courseId) => api.post(`/payments/order/courses/${courseId}`);
+export const verifyPayment = (payload) => api.post('/payments/verify', payload);
