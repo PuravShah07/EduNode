@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { getCourse, enrollInCourse, getCourseMaterials, uploadCourseMaterial, deleteCourseMaterial, getMyEnrolledCourses, updateEnrollmentProgress, updateEnrollmentRating } from '../api/courses';
+import { getCourse, enrollInCourse, getCourseMaterials, uploadCourseMaterial, deleteCourseMaterial, getMyEnrolledCourses, updateEnrollmentProgress, updateEnrollmentRating, createPaymentOrder, verifyPayment } from '../api/courses';
 import { getMe } from '../api/auth';
 import { API_BASE_URL } from '../api/axiosConfig';
 import { FileText, Video, File, Trash2, UploadCloud, ChevronLeft, Rocket, Layers, Download, Star, CheckCircle } from 'lucide-react';
@@ -75,12 +75,55 @@ const CourseDetails = () => {
       navigate('/login');
       return;
     }
+
+    if (!course.price || parseFloat(course.price) <= 0) {
+      try {
+        await enrollInCourse(id);
+        alert('Successfully enrolled!');
+        loadData();
+      } catch (err) {
+        alert(err.response?.data?.message || 'Failed to enroll');
+      }
+      return;
+    }
+
     try {
-      await enrollInCourse(id);
-      alert('Successfully enrolled!');
-      loadData(); // reload to fetch materials
+      const orderRes = await createPaymentOrder(id);
+      const orderData = orderRes.data;
+
+      const options = {
+        key: orderData.razorpayKeyId,
+        amount: Math.round(parseFloat(orderData.amount) * 100),
+        currency: orderData.currency,
+        name: "EduNode",
+        description: `Enroll in ${orderData.courseTitle}`,
+        order_id: orderData.razorpayOrderId,
+        handler: async function (response) {
+          try {
+            await verifyPayment({
+              razorpayOrderId: orderData.razorpayOrderId,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpaySignature: response.razorpay_signature
+            });
+            alert('Payment successful! You are now enrolled.');
+            loadData();
+          } catch (err) {
+            alert(err.response?.data?.message || 'Payment verification failed');
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || ''
+        },
+        theme: {
+          color: "#06b6d4"
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to enroll');
+      alert(err.response?.data?.message || 'Failed to initiate purchase');
     }
   };
 
