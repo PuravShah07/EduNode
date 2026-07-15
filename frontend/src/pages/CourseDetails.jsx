@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { getCourse, enrollInCourse, getCourseMaterials, uploadCourseMaterial, deleteCourseMaterial } from '../api/courses';
+import { getCourse, enrollInCourse, getCourseMaterials, uploadCourseMaterial, deleteCourseMaterial, getMyEnrolledCourses, updateEnrollmentProgress, updateEnrollmentRating } from '../api/courses';
 import { getMe } from '../api/auth';
 import { API_BASE_URL } from '../api/axiosConfig';
-import { FileText, Video, File, Trash2, UploadCloud, ChevronLeft, Rocket, Layers, Download } from 'lucide-react';
+import { FileText, Video, File, Trash2, UploadCloud, ChevronLeft, Rocket, Layers, Download, Star, CheckCircle } from 'lucide-react';
 
 const CourseDetails = () => {
   const { id } = useParams();
@@ -17,6 +17,7 @@ const CourseDetails = () => {
   const [loading, setLoading] = useState(true);
   const [activeVideo, setActiveVideo] = useState(null);
   const [activeDoc, setActiveDoc] = useState(null);
+  const [enrollment, setEnrollment] = useState(null);
 
   // Material upload state
   const [file, setFile] = useState(null);
@@ -40,6 +41,11 @@ const CourseDetails = () => {
       try {
         const userRes = await getMe();
         setUser(userRes.data);
+        if (userRes.data.role === 'ROLE_LEARNER') {
+          const enrollmentsRes = await getMyEnrolledCourses();
+          const currentEnrollment = enrollmentsRes.data.find(e => e.courseId === parseInt(id));
+          setEnrollment(currentEnrollment || null);
+        }
       } catch (e) {
         // Not logged in
       }
@@ -75,6 +81,40 @@ const CourseDetails = () => {
       loadData(); // reload to fetch materials
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to enroll');
+    }
+  };
+
+  const handleProgressSliderChange = async (e) => {
+    const val = parseInt(e.target.value);
+    const completed = val === 100;
+    // optimistic update
+    setEnrollment(prev => ({ ...prev, progress: val, completed }));
+    try {
+      await updateEnrollmentProgress(enrollment.id, val, completed);
+    } catch (err) {
+      alert("Failed to update progress");
+    }
+  };
+
+  const handleCompletedCheckboxChange = async (e) => {
+    const checked = e.target.checked;
+    const progressVal = checked ? 100 : enrollment.progress;
+    // optimistic update
+    setEnrollment(prev => ({ ...prev, completed: checked, progress: progressVal }));
+    try {
+      await updateEnrollmentProgress(enrollment.id, progressVal, checked);
+    } catch (err) {
+      alert("Failed to update status");
+    }
+  };
+
+  const handleRateCourse = async (rating) => {
+    // optimistic update
+    setEnrollment(prev => ({ ...prev, rating }));
+    try {
+      await updateEnrollmentRating(enrollment.id, rating);
+    } catch (err) {
+      alert("Failed to save rating");
     }
   };
 
@@ -260,7 +300,7 @@ const CourseDetails = () => {
           <h2 className="text-2xl font-black uppercase text-ink-dark mb-4">About this course</h2>
           <p className="text-ink-gray text-lg leading-relaxed whitespace-pre-wrap">{course.description}</p>
           
-          {(user?.role === 'ROLE_LEARNER' || !user) && (
+          {((user?.role === 'ROLE_LEARNER' && !enrollment) || !user) && (
             <div className="mt-8 pt-8 border-t border-gray-100">
               <button 
                 onClick={handleEnroll}
@@ -271,6 +311,74 @@ const CourseDetails = () => {
             </div>
           )}
         </div>
+
+        {/* Progress & Rating Card (Only for enrolled learners) */}
+        {enrollment && (
+          <div className="bg-white rounded-2xl shadow-soft p-8 md:p-12 mb-10 border border-gray-100">
+            <h2 className="text-2xl font-black uppercase text-ink-dark mb-6 flex items-center gap-3">
+              <CheckCircle className="text-accent-cyan" /> Progress & Feedback
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              
+              {/* Progress Tracker */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold uppercase text-ink-dark text-sm tracking-wider">Your Course Progress</span>
+                  <span className="font-black text-accent-cyan text-lg">{enrollment.progress || 0}%</span>
+                </div>
+                
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={enrollment.progress || 0} 
+                  onChange={handleProgressSliderChange}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-accent-cyan"
+                />
+
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <input 
+                    type="checkbox" 
+                    checked={enrollment.completed || false} 
+                    onChange={handleCompletedCheckboxChange}
+                    className="w-5 h-5 rounded border-gray-300 text-accent-cyan focus:ring-accent-cyan cursor-pointer"
+                  />
+                  <span className="font-bold text-sm text-ink-dark uppercase">Mark as Completed</span>
+                </label>
+              </div>
+
+              {/* Rating Feedbacks */}
+              <div className="space-y-4">
+                <span className="block font-bold uppercase text-ink-dark text-sm tracking-wider">Rate this Course</span>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => handleRateCourse(star)}
+                      className="transition-transform duration-200 hover:scale-125 focus:outline-none"
+                    >
+                      <Star 
+                        size={32} 
+                        className={`${
+                          star <= (enrollment.rating || 0) 
+                            ? 'fill-yellow-400 text-yellow-400' 
+                            : 'text-gray-300 hover:text-yellow-400'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {enrollment.rating > 0 ? (
+                  <p className="text-sm font-medium text-ink-gray">You rated this course {enrollment.rating} out of 5 stars.</p>
+                ) : (
+                  <p className="text-sm font-medium text-gray-400">Click a star to share your rating with the instructor.</p>
+                )}
+              </div>
+
+            </div>
+          </div>
+        )}
 
         {/* Materials Section */}
         <div className="bg-white rounded-2xl shadow-soft p-8 md:p-12 border border-gray-100">

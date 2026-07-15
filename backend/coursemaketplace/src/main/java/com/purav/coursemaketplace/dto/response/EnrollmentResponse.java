@@ -15,4 +15,7 @@ public class EnrollmentResponse {
     private String courseTitle;
     private String instructorName;
     private LocalDateTime enrolledAt;
+    private Integer rating;
+    private Boolean completed;
+    private Integer progress;
 }

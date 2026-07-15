@@ -38,4 +38,25 @@ public class EnrollmentController {
         
         return ResponseEntity.ok(enrollmentService.getMyCourses(student));
     }
+
+    @PutMapping("/{id}/progress")
+    @PreAuthorize("hasRole('LEARNER')")
+    public ResponseEntity<EnrollmentResponse> updateProgress(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer progress,
+            @RequestParam(required = false) Boolean completed,
+            @AuthenticationPrincipal User student) {
+        
+        return ResponseEntity.ok(enrollmentService.updateProgress(id, progress, completed, student));
+    }
+
+    @PutMapping("/{id}/rate")
+    @PreAuthorize("hasRole('LEARNER')")
+    public ResponseEntity<EnrollmentResponse> updateRating(
+            @PathVariable Long id,
+            @RequestParam Integer rating,
+            @AuthenticationPrincipal User student) {
+        
+        return ResponseEntity.ok(enrollmentService.updateRating(id, rating, student));
+    }
 }

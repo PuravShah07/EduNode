@@ -18,3 +18,9 @@ export const uploadCourseMaterial = (courseId, formData, onUploadProgress) => ap
     onUploadProgress
 });
 export const deleteCourseMaterial = (materialId) => api.delete(`/courses/materials/${materialId}`);
+
+export const getInstructorDashboard = () => api.get('/courses/instructor/dashboard');
+export const updateEnrollmentProgress = (id, progress, completed) => 
+    api.put(`/enrollments/${id}/progress?progress=${progress}&completed=${completed}`);
+export const updateEnrollmentRating = (id, rating) => 
+    api.put(`/enrollments/${id}/rate?rating=${rating}`);

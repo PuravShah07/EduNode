@@ -29,4 +29,12 @@ public class Enrollment {
 
     @CreationTimestamp
     private LocalDateTime enrolledAt;
+
+    private Integer rating;
+
+    @Builder.Default
+    private Boolean completed = false;
+
+    @Builder.Default
+    private Integer progress = 0;
 }

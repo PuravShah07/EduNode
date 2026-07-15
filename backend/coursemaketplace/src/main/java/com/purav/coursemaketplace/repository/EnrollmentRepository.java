@@ -19,4 +19,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     // EntityGraph prevents the N+1 query problem by eagerly fetching relations in a single DB query
     @EntityGraph(attributePaths = {"user", "course", "course.instructor"})
     Page<Enrollment> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user", "course", "course.instructor"})
+    List<Enrollment> findByCourseInstructor(User instructor);
 }

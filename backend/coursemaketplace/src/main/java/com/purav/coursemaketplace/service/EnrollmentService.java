@@ -45,6 +45,50 @@ public class EnrollmentService {
                 .collect(Collectors.toList());
     }
 
+    public EnrollmentResponse updateProgress(Long enrollmentId, Integer progress, Boolean completed, User student) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new com.purav.coursemaketplace.exception.ResourceNotFoundException("Enrollment not found"));
+
+        if (!enrollment.getUser().getId().equals(student.getId())) {
+            throw new com.purav.coursemaketplace.exception.BadRequestException("You do not own this enrollment");
+        }
+
+        if (progress != null) {
+            if (progress < 0 || progress > 100) {
+                throw new com.purav.coursemaketplace.exception.BadRequestException("Progress must be between 0 and 100");
+            }
+            enrollment.setProgress(progress);
+        }
+        if (completed != null) {
+            enrollment.setCompleted(completed);
+            if (completed && (progress == null || progress < 100)) {
+                enrollment.setProgress(100);
+            }
+        }
+
+        Enrollment updated = enrollmentRepository.save(enrollment);
+        return mapToResponse(updated);
+    }
+
+    public EnrollmentResponse updateRating(Long enrollmentId, Integer rating, User student) {
+        Enrollment enrollment = enrollmentRepository.findById(enrollmentId)
+                .orElseThrow(() -> new com.purav.coursemaketplace.exception.ResourceNotFoundException("Enrollment not found"));
+
+        if (!enrollment.getUser().getId().equals(student.getId())) {
+            throw new com.purav.coursemaketplace.exception.BadRequestException("You do not own this enrollment");
+        }
+
+        if (rating != null) {
+            if (rating < 1 || rating > 5) {
+                throw new com.purav.coursemaketplace.exception.BadRequestException("Rating must be between 1 and 5");
+            }
+            enrollment.setRating(rating);
+        }
+
+        Enrollment updated = enrollmentRepository.save(enrollment);
+        return mapToResponse(updated);
+    }
+
     private EnrollmentResponse mapToResponse(Enrollment enrollment) {
         return EnrollmentResponse.builder()
                 .id(enrollment.getId())
@@ -52,6 +96,9 @@ public class EnrollmentService {
                 .courseTitle(enrollment.getCourse().getTitle())
                 .instructorName(enrollment.getCourse().getInstructor().getName())
                 .enrolledAt(enrollment.getEnrolledAt())
+                .rating(enrollment.getRating())
+                .completed(enrollment.getCompleted())
+                .progress(enrollment.getProgress())
                 .build();
     }
 }
