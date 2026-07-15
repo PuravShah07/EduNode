@@ -1,414 +1,611 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
-import Hero from '../components/Hero';
-import ServicesCarousel from '../components/ServicesCarousel';
-import { motion } from 'framer-motion';
-import { ShieldCheck, Sparkles, Users, Lock, Key, Cpu, GraduationCap, UploadCloud, PlayCircle, Eye, Star, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Shield, 
+  Lock, 
+  Sparkles, 
+  UploadCloud, 
+  Cpu, 
+  Key, 
+  PlayCircle, 
+  Eye, 
+  GraduationCap, 
+  ChevronRight, 
+  Star, 
+  RefreshCw, 
+  BarChart2, 
+  Users, 
+  BookOpen, 
+  Activity 
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Home = () => {
+  // Simulator State
+  const [inputText, setInputText] = useState("EduNode is a secure learning marketplace.");
+  const [outputText, setOutputText] = useState("");
+  const [simStatus, setSimStatus] = useState("idle"); // idle, encrypting, encrypted, decrypting
+  const [shuffleText, setShuffleText] = useState("");
+
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
+      transition: { staggerChildren: 0.15 }
     }
   };
 
   const itemVariants = {
     hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 70 } }
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 60, damping: 15 } }
+  };
+
+  // Cryptographic simulator handler
+  const handleEncrypt = () => {
+    if (!inputText) return;
+    setSimStatus("encrypting");
+    let count = 0;
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+    const interval = setInterval(() => {
+      let temp = "";
+      for (let i = 0; i < 35; i++) {
+        temp += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      setShuffleText(temp);
+      count++;
+      if (count > 12) {
+        clearInterval(interval);
+        // Base64 mock representation of AES
+        const enc = btoa(inputText).substring(0, 24) + "==";
+        setOutputText(enc);
+        setSimStatus("encrypted");
+      }
+    }, 80);
+  };
+
+  const handleDecrypt = () => {
+    setSimStatus("decrypting");
+    let count = 0;
+    const interval = setInterval(() => {
+      let temp = "";
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      for (let i = 0; i < 20; i++) {
+        temp += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      setShuffleText(temp);
+      count++;
+      if (count > 12) {
+        clearInterval(interval);
+        setOutputText(inputText);
+        setSimStatus("idle");
+      }
+    }, 80);
   };
 
   return (
-    <div className="min-h-screen bg-paper-offwhite section-glow overflow-x-hidden">
+    <div className="min-h-screen bg-paper-offwhite text-ink-dark overflow-x-hidden relative selection:bg-accent-cyan selection:text-white">
       <Navbar />
-      <Hero />
 
-      {/* Highlights Strip */}
-      <section className="px-6 py-10">
-        <div className="max-w-[1200px] mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="glass-card rounded-2xl p-6 flex items-center gap-4 border border-gray-100/50"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-accent-cyan/20 flex items-center justify-center text-accent-cyan">
-              <UploadCloud size={20} />
-            </div>
-            <div>
-              <div className="text-xs uppercase font-bold text-ink-gray">Optimized Upload</div>
-              <div className="text-lg font-black text-ink-dark">Fast Client-Side Compression</div>
-            </div>
-          </motion.div>
-          
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="glass-card rounded-2xl p-6 flex items-center gap-4 border border-gray-100/50"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-accent-coral/20 flex items-center justify-center text-accent-coral">
-              <Lock size={20} />
-            </div>
-            <div>
-              <div className="text-xs uppercase font-bold text-ink-gray">Data Safety</div>
-              <div className="text-lg font-black text-ink-dark">AES-256 File Encryption</div>
-            </div>
-          </motion.div>
+      {/* Grid Pattern Background */}
+      <div className="absolute inset-0 pointer-events-none opacity-20 z-0 bg-[linear-gradient(to_right,#e5e7eb_1px,transparent_1px),linear-gradient(to_bottom,#e5e7eb_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="glass-card rounded-2xl p-6 flex items-center gap-4 border border-gray-100/50"
+      {/* Modern Hero Section */}
+      <header className="relative pt-[120px] pb-[160px] px-6 w-full max-w-[1400px] mx-auto z-10 flex flex-col items-center text-center overflow-hidden">
+        {/* Floating gradient circles */}
+        <div className="absolute -top-32 -left-32 w-[350px] h-[350px] rounded-full bg-accent-cyan/10 blur-3xl pointer-events-none"></div>
+        <div className="absolute top-1/2 -right-32 w-[400px] h-[400px] rounded-full bg-accent-coral/10 blur-3xl pointer-events-none"></div>
+
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="inline-flex items-center gap-2 bg-white border border-gray-200 px-4 py-2 rounded-full text-xs uppercase font-extrabold tracking-widest text-accent-cyan shadow-sm mb-6"
+        >
+          <Sparkles size={14} className="text-accent-coral" /> Next-Gen Learning Ecosystem
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, type: "spring", stiffness: 50 }}
+          className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-tight max-w-[900px]"
+        >
+          Secure Your Knowledge. <br />
+          <span className="bg-gradient-to-r from-accent-cyan to-blue-600 bg-clip-text text-transparent">Empower Learning.</span>
+        </motion.h1>
+
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.15 }}
+          className="text-lg md:text-xl text-ink-gray font-medium max-w-[700px] mt-6 mb-10"
+        >
+          A state-of-the-art course marketplace. Instructors secure assets with AES-256 client encryption, while students enjoy dynamic streaming and verified completion paths.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8, delay: 0.25 }}
+          className="flex flex-col sm:flex-row gap-4"
+        >
+          <Link
+            to="/courses"
+            className="bg-accent-cyan text-white px-8 py-4 flex items-center justify-center gap-2 rounded-xl text-lg font-bold uppercase tracking-wide hover:bg-accent-coral shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5"
           >
-            <div className="w-12 h-12 rounded-2xl bg-ink-dark/10 flex items-center justify-center text-ink-dark">
-              <PlayCircle size={20} />
-            </div>
-            <div>
-              <div className="text-xs uppercase font-bold text-ink-gray">Direct Learning</div>
-              <div className="text-lg font-black text-ink-dark">Instant Course Enrollment</div>
-            </div>
-          </motion.div>
+            Explore Catalog <ChevronRight size={18} />
+          </Link>
+          <Link
+            to="/register"
+            className="border border-gray-200 bg-white hover:border-accent-cyan text-ink-dark px-8 py-4 rounded-xl text-lg font-bold uppercase tracking-wide hover:shadow-md transition-all duration-300 flex items-center justify-center hover:-translate-y-0.5"
+          >
+            Join as Instructor
+          </Link>
+        </motion.div>
+
+        {/* Feature Tags */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1, delay: 0.4 }}
+          className="flex flex-wrap gap-4 mt-12 justify-center"
+        >
+          <span className="px-4 py-2 rounded-xl bg-white border border-gray-100 shadow-sm text-ink-dark font-black text-xs uppercase tracking-wide flex items-center gap-2">
+            <Shield size={14} className="text-accent-cyan" /> AES-256 Encryption
+          </span>
+          <span className="px-4 py-2 rounded-xl bg-white border border-gray-100 shadow-sm text-ink-dark font-black text-xs uppercase tracking-wide flex items-center gap-2">
+            <PlayCircle size={14} className="text-accent-coral" /> Decrypted Streaming
+          </span>
+          <span className="px-4 py-2 rounded-xl bg-white border border-gray-100 shadow-sm text-ink-dark font-black text-xs uppercase tracking-wide flex items-center gap-2">
+            <UploadCloud size={14} className="text-accent-cyan" /> Browser Compression
+          </span>
+        </motion.div>
+      </header>
+
+      {/* Key highlights scrolling band */}
+      <section className="py-6 bg-ink-dark overflow-hidden relative z-10 w-full">
+        <div className="flex whitespace-nowrap gap-8 animate-marquee text-white/80 font-black text-xs uppercase tracking-[0.25em]">
+          <span>AES-256 CIPHER PROTECTION</span>
+          <span>•</span>
+          <span>REAL-TIME INSTRUCTOR STATS</span>
+          <span>•</span>
+          <span>ENCRYPTED FILE SHIELDING</span>
+          <span>•</span>
+          <span>IN-BROWSER IMAGE COMPRESSION</span>
+          <span>•</span>
+          <span>JWT ACCESS VALIDATION</span>
+          <span>•</span>
+          <span>DYNAMIC STREAMING DECRYPTION</span>
+          <span>•</span>
+          <span>AES-256 CIPHER PROTECTION</span>
+          <span>•</span>
+          <span>REAL-TIME INSTRUCTOR STATS</span>
         </div>
       </section>
 
-      {/* Motion Band */}
-      <section className="px-6 py-6">
-        <div className="max-w-[1200px] mx-auto bg-ink-dark text-white rounded-2xl px-6 py-4 overflow-hidden">
-          <div className="marquee">
-            <div className="marquee-track text-xs uppercase font-bold tracking-[0.25em] text-white/70">
-              <span>AES-256-CBC CIPHER</span>
-              <span>•</span>
-              <span>INSTRUCTOR WORKSPACE</span>
-              <span>•</span>
-              <span>STREAMING DECRYPTION</span>
-              <span>•</span>
-              <span>CLIENT COMPRESSION</span>
-              <span>•</span>
-              <span>SECURE ACCESS CONTROLS</span>
-              <span>•</span>
-              <span>ADMIN AUDIT CONSOLE</span>
-              <span>•</span>
-              <span>AES-256-CBC CIPHER</span>
-              <span>•</span>
-              <span>INSTRUCTOR WORKSPACE</span>
-              <span>•</span>
-              <span>STREAMING DECRYPTION</span>
-              <span>•</span>
-              <span>CLIENT COMPRESSION</span>
-              <span>•</span>
-              <span>SECURE ACCESS CONTROLS</span>
-              <span>•</span>
-              <span>ADMIN AUDIT CONSOLE</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Value Proposition */}
-      <section className="px-6 py-14 bg-paper-light torn-paper-edge">
-        <div className="max-w-[1200px] mx-auto">
-          <motion.h2 
-            initial={{ opacity: 0, y: -25 }}
+      {/* Feature Bento Grid (Magic UI Inspired) */}
+      <section className="px-6 py-24 max-w-[1200px] mx-auto relative z-10">
+        <div className="text-center mb-16">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-black uppercase text-ink-dark mb-8 text-center"
+            className="text-4xl md:text-5xl font-black uppercase"
           >
-            Secured Learning Architecture
+            Secured Technology Architecture
           </motion.h2>
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-ink-gray mt-4 max-w-[600px] mx-auto text-md font-medium"
           >
-            <motion.div variants={itemVariants} className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100 premium-border">
-              <div className="bg-white rounded-2xl p-6">
-                <ShieldCheck className="text-accent-cyan mb-4" size={28} />
-                <h3 className="text-xl font-bold mb-2">Cryptographic Privacy</h3>
-                <p className="text-ink-gray">Course materials are fully isolated. Standard directory requests are blocked via JWT authority filters.</p>
-              </div>
-            </motion.div>
-            <motion.div variants={itemVariants} className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100 premium-border">
-              <div className="bg-white rounded-2xl p-6">
-                <Sparkles className="text-accent-coral mb-4" size={28} />
-                <h3 className="text-xl font-bold mb-2">Direct Access</h3>
-                <p className="text-ink-gray">One-click student enrollment instantly links courses to learners without complex payment gate delays.</p>
-              </div>
-            </motion.div>
-            <motion.div variants={itemVariants} className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100 premium-border">
-              <div className="bg-white rounded-2xl p-6">
-                <Users className="text-accent-cyan mb-4" size={28} />
-                <h3 className="text-xl font-bold mb-2">Role Separation</h3>
-                <p className="text-ink-gray">Strict segregation guarantees learners, instructors, and admins interact with secure workspaces.</p>
-              </div>
-            </motion.div>
-          </motion.div>
+            Explore the core features driving secure content uploads, dashboard calculations, and encrypted media streaming.
+          </motion.p>
         </div>
-      </section>
 
-      {/* How It Works */}
-      <section className="px-6 py-14">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
-            <motion.h2 
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="text-3xl md:text-5xl font-black uppercase text-ink-dark"
-            >
-              How It Works
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="text-ink-gray max-w-xl"
-            >
-              From asset protection to dynamical decryption. Designed for creator security and browser playback efficiency.
-            </motion.p>
-          </div>
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: "-100px" }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6"
+        >
+          {/* Box 1: Material Shielding */}
+          <motion.div
+            variants={itemVariants}
+            className="md:col-span-2 bg-white rounded-3xl p-8 border border-gray-100 shadow-soft hover:shadow-soft-hover transition-all duration-300 flex flex-col justify-between group cursor-pointer relative overflow-hidden"
           >
-            <motion.div variants={itemVariants} className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100 glass-card">
-              <div className="w-12 h-12 rounded-2xl bg-accent-cyan/20 flex items-center justify-center text-accent-cyan mb-5">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-accent-cyan/5 rounded-full blur-xl group-hover:bg-accent-cyan/10 transition-colors"></div>
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-accent-cyan/10 text-accent-cyan flex items-center justify-center mb-6">
+                <Lock size={22} />
+              </div>
+              <h3 className="text-2xl font-black uppercase mb-3">AES-256 File Shielding</h3>
+              <p className="text-ink-gray text-base leading-relaxed max-w-[500px]">
+                Your content is fully encrypted in transit and on the server. Public downloads and leaks are blocked. Only enrolled students can access assets via authorized JWT link tokens.
+              </p>
+            </div>
+            <div className="mt-8 bg-paper-offwhite p-4 rounded-xl border border-gray-100 font-mono text-xs text-ink-gray flex flex-col gap-1 select-none">
+              <div>$ openssl enc -aes-256-cbc -salt -in lesson.mp4</div>
+              <div className="text-accent-cyan font-bold">[Success] cipher: U2FsdGVkX196M9Q7m...</div>
+            </div>
+          </motion.div>
+
+          {/* Box 2: Client Resizing */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-3xl p-8 border border-gray-100 shadow-soft hover:shadow-soft-hover transition-all duration-300 flex flex-col justify-between group cursor-pointer"
+          >
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-accent-coral/10 text-accent-coral flex items-center justify-center mb-6">
                 <UploadCloud size={22} />
               </div>
-              <div className="text-xs uppercase font-bold text-ink-gray">Step 01</div>
-              <h3 className="text-xl font-bold mb-2">Compress & Encrypt</h3>
-              <p className="text-ink-gray">Instructors upload files. Images are compressed in-browser and encrypted with AES-256 before transit.</p>
-            </motion.div>
-            
-            <motion.div variants={itemVariants} className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100 glass-card">
-              <div className="w-12 h-12 rounded-2xl bg-accent-coral/20 flex items-center justify-center text-accent-coral mb-5">
-                <Key size={22} />
-              </div>
-              <div className="text-xs uppercase font-bold text-ink-gray">Step 02</div>
-              <h3 className="text-xl font-bold mb-2">Configure Target Pricing</h3>
-              <p className="text-ink-gray">Instructors publish courses, set reference prices in INR, and define structured learning modules.</p>
-            </motion.div>
+              <h3 className="text-2xl font-black uppercase mb-3">Client Resizing</h3>
+              <p className="text-ink-gray text-base leading-relaxed">
+                Images are automatically compressed in-browser before upload. Reduces file size, speeds up transmission times, and saves server storage limits.
+              </p>
+            </div>
+            <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
+              <span className="text-xs uppercase font-extrabold text-ink-gray">Input: 12MB Image</span>
+              <span className="text-xs uppercase font-extrabold text-accent-coral">Uploaded: 1.2MB JPEG (80% compressed)</span>
+            </div>
+          </motion.div>
 
-            <motion.div variants={itemVariants} className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100 glass-card">
-              <div className="w-12 h-12 rounded-2xl bg-ink-dark/10 flex items-center justify-center text-ink-dark mb-5">
+          {/* Box 3: Instructor Metrics */}
+          <motion.div
+            variants={itemVariants}
+            className="bg-white rounded-3xl p-8 border border-gray-100 shadow-soft hover:shadow-soft-hover transition-all duration-300 flex flex-col justify-between group cursor-pointer"
+          >
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-accent-coral/10 text-accent-coral flex items-center justify-center mb-6">
+                <BarChart2 size={22} />
+              </div>
+              <h3 className="text-2xl font-black uppercase mb-3">Real-Time Metrics</h3>
+              <p className="text-ink-gray text-base leading-relaxed">
+                Track revenue, enrollments, completion rates, and ratings directly from your instructor workspace. Powered by immediate backend calculation.
+              </p>
+            </div>
+            <div className="mt-8 bg-paper-light p-4 rounded-xl border border-gray-200">
+              <div className="text-[10px] uppercase font-bold text-ink-gray mb-1">Interactive Plots</div>
+              <div className="flex gap-2 items-end h-12">
+                <div className="w-full bg-accent-cyan h-4 rounded"></div>
+                <div className="w-full bg-accent-coral h-10 rounded"></div>
+                <div className="w-full bg-accent-cyan h-7 rounded"></div>
+                <div className="w-full bg-accent-coral h-12 rounded"></div>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Box 4: Streaming Decryption */}
+          <motion.div
+            variants={itemVariants}
+            className="md:col-span-2 bg-white rounded-3xl p-8 border border-gray-100 shadow-soft hover:shadow-soft-hover transition-all duration-300 flex flex-col justify-between group cursor-pointer relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-accent-coral/5 rounded-full blur-xl group-hover:bg-accent-coral/10 transition-colors"></div>
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-accent-cyan/10 text-accent-cyan flex items-center justify-center mb-6">
                 <PlayCircle size={22} />
               </div>
-              <div className="text-xs uppercase font-bold text-ink-gray">Step 03</div>
-              <h3 className="text-xl font-bold mb-2">Dynamic Decrypted Streaming</h3>
-              <p className="text-ink-gray">Enrolled students stream material. The backend decrypts assets stream-wise directly to the browser view.</p>
-            </motion.div>
+              <h3 className="text-2xl font-black uppercase mb-3">Decrypted Streaming</h3>
+              <p className="text-ink-gray text-base leading-relaxed max-w-[500px]">
+                Enrolled students stream files seamlessly. The Spring Boot backend reads encrypted chunks, decrypts them in-memory, and pipes them straight to HTML5 players. No decrypted files are ever written to the client disk.
+              </p>
+            </div>
+            <div className="mt-8 flex items-center gap-4 border-t border-gray-100 pt-6">
+              <div className="h-2 bg-accent-cyan/20 w-full rounded-full overflow-hidden">
+                <motion.div 
+                  animate={{ x: ["-100%", "100%"] }} 
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                  className="h-full bg-accent-cyan w-1/3 rounded-full"
+                ></motion.div>
+              </div>
+              <span className="text-xs uppercase font-extrabold text-accent-cyan whitespace-nowrap">Decrypting stream...</span>
+            </div>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* Interactive Cryptographic Simulator */}
+      <section className="px-6 py-24 bg-paper-light border-y border-gray-200 relative z-10">
+        <div className="max-w-[1000px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          {/* Text content */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="inline-flex items-center gap-2 bg-accent-cyan/10 border border-accent-cyan/20 px-3 py-1.5 rounded-full text-[10px] uppercase font-black text-accent-cyan tracking-wider">
+              Interactive simulator
+            </div>
+            <h2 className="text-3xl md:text-4xl font-black uppercase">
+              See the Encryption in Action
+            </h2>
+            <p className="text-ink-gray leading-relaxed font-medium">
+              Type any plain text message below, click encrypt, and see how our system processes and secures data with cryptographic keys.
+            </p>
+            <div className="space-y-3">
+              <input 
+                type="text" 
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                disabled={simStatus === "encrypting" || simStatus === "decrypting"}
+                placeholder="Enter some text..."
+                className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:border-accent-cyan focus:ring-2 focus:ring-accent-cyan/15 bg-white font-medium text-sm transition-all"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={handleEncrypt}
+                  disabled={simStatus !== "idle" && simStatus !== "decrypted"}
+                  className="flex-1 bg-accent-cyan text-white py-3 rounded-xl font-bold uppercase text-xs hover:bg-accent-coral transition-colors disabled:opacity-40 hover:shadow-md"
+                >
+                  Run Encryption
+                </button>
+                <button
+                  onClick={handleDecrypt}
+                  disabled={simStatus !== "encrypted"}
+                  className="flex-1 border border-gray-300 bg-white text-ink-dark py-3 rounded-xl font-bold uppercase text-xs hover:border-accent-cyan transition-colors disabled:opacity-40"
+                >
+                  Run Decryption
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Visualization Console */}
+          <div className="lg:col-span-7 bg-ink-dark rounded-3xl p-6 md:p-8 text-white font-mono text-sm relative overflow-hidden border border-gray-800 shadow-xl min-h-[300px] flex flex-col justify-between">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
+            
+            {/* Header tags */}
+            <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-4">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
+                <span className="w-3 h-3 rounded-full bg-green-500"></span>
+              </div>
+              <span className="text-xs uppercase font-extrabold tracking-wider text-gray-500">AES-256 CONSOLE</span>
+            </div>
+
+            {/* Simulated Shell Screen */}
+            <div className="flex-1 flex flex-col justify-center space-y-4">
+              <div>
+                <span className="text-accent-cyan font-bold mr-2">&gt;</span> 
+                <span className="text-gray-400">Plaintext Input:</span>
+                <div className="mt-1 text-white font-semibold">{inputText || <span className="text-gray-600">empty</span>}</div>
+              </div>
+
+              {simStatus === "encrypting" && (
+                <div className="animate-pulse space-y-1">
+                  <div className="text-xs text-accent-coral font-bold uppercase flex items-center gap-2">
+                    <RefreshCw className="animate-spin" size={12} /> Running CBC-Salting Cipher...
+                  </div>
+                  <div className="text-xs text-gray-500 break-all">{shuffleText}</div>
+                </div>
+              )}
+
+              {simStatus === "decrypting" && (
+                <div className="animate-pulse space-y-1">
+                  <div className="text-xs text-accent-cyan font-bold uppercase flex items-center gap-2">
+                    <RefreshCw className="animate-spin" size={12} /> Access Checked: Decrypting blocks...
+                  </div>
+                  <div className="text-xs text-gray-500 break-all">{shuffleText}</div>
+                </div>
+              )}
+
+              {simStatus === "encrypted" && (
+                <motion.div 
+                  initial={{ scale: 0.98, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="space-y-1"
+                >
+                  <div className="text-xs text-red-400 font-extrabold uppercase flex items-center gap-1.5">
+                    <Lock size={12} /> Cipher Output (Stored in DB):
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-lg border border-white/10 break-all text-xs font-bold text-green-400 select-all">
+                    {outputText}
+                  </div>
+                </motion.div>
+              )}
+
+              {simStatus === "idle" && outputText && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <div className="text-xs text-green-400 font-extrabold uppercase flex items-center gap-1.5">
+                    <Shield size={12} /> Decrypted Output:
+                  </div>
+                  <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-white font-bold">
+                    {outputText}
+                  </div>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Footer status bar */}
+            <div className="border-t border-white/10 pt-4 mt-4 flex justify-between items-center text-xs text-gray-500 font-black uppercase">
+              <span>Status: {simStatus}</span>
+              <span className="text-accent-cyan">Key Length: 256 bits</span>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* Role Workspace Showcase Section */}
+      <section className="px-6 py-24 max-w-[1200px] mx-auto relative z-10">
+        <div className="text-center mb-16">
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-5xl font-black uppercase"
+          >
+            Modular Workspace Roles
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-ink-gray mt-4 max-w-[600px] mx-auto text-md font-medium"
+          >
+            EduNode isolates student, creator, and administrator tools into dedicated interfaces.
+          </motion.p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {/* Role 1 */}
+          <motion.div 
+            whileHover={{ y: -6 }}
+            className="bg-white rounded-3xl shadow-soft p-8 border border-gray-100 flex flex-col justify-between h-[360px] group transition-all duration-300"
+          >
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-accent-cyan/10 text-accent-cyan flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <GraduationCap size={24} />
+              </div>
+              <h3 className="text-xl font-bold uppercase mb-2">Learner Console</h3>
+              <p className="text-ink-gray text-sm leading-relaxed">
+                Browse catalog, enroll instantly, and stream course videos or download documents decrypted in-memory directly within your web browser. Mark courses complete and review ratings.
+              </p>
+            </div>
+            <Link to="/courses" className="text-xs uppercase font-extrabold text-accent-cyan hover:text-accent-coral flex items-center gap-1 transition-colors">
+              Browse Catalogue <ChevronRight size={14} />
+            </Link>
+          </motion.div>
+
+          {/* Role 2 */}
+          <motion.div 
+            whileHover={{ y: -6 }}
+            className="bg-white rounded-3xl shadow-soft p-8 border border-gray-100 flex flex-col justify-between h-[360px] group transition-all duration-300"
+          >
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-accent-coral/10 text-accent-coral flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <BarChart2 size={24} />
+              </div>
+              <h3 className="text-xl font-bold uppercase mb-2">Instructor Studio</h3>
+              <p className="text-ink-gray text-sm leading-relaxed">
+                Author courses, set pricing models, and upload materials using client-side compression. Track earnings, student enrollments, completion rates, and average rating feedback.
+              </p>
+            </div>
+            <Link to="/register" className="text-xs uppercase font-extrabold text-accent-coral hover:text-accent-cyan flex items-center gap-1 transition-colors">
+              Register Studio <ChevronRight size={14} />
+            </Link>
+          </motion.div>
+
+          {/* Role 3 */}
+          <motion.div 
+            whileHover={{ y: -6 }}
+            className="bg-white rounded-3xl shadow-soft p-8 border border-gray-100 flex flex-col justify-between h-[360px] group transition-all duration-300"
+          >
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-accent-cyan/10 text-accent-cyan flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                <Eye size={24} />
+              </div>
+              <h3 className="text-xl font-bold uppercase mb-2">Admin Dashboard</h3>
+              <p className="text-ink-gray text-sm leading-relaxed">
+                Oversee entire application operations. Review registered student logs, audit instructor counts, and inspect global enrollment directories through a centralized database console.
+              </p>
+            </div>
+            <Link to="/login" className="text-xs uppercase font-extrabold text-accent-cyan hover:text-accent-coral flex items-center gap-1 transition-colors">
+              Staff Portal <ChevronRight size={14} />
+            </Link>
           </motion.div>
         </div>
       </section>
 
-      {/* Cryptographic Security Details */}
-      <section className="px-6 py-14 bg-ink-dark text-white">
-        <div className="max-w-[1200px] mx-auto">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
-            <motion.h2 
-              initial={{ opacity: 0, y: -20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="text-3xl md:text-5xl font-black uppercase"
-            >
-              Cryptographic Security Framework
-            </motion.h2>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              viewport={{ once: true }}
-              className="text-gray-300 max-w-xl"
-            >
-              How our backend protects video files, PDFs, and documents from link leaks and unauthorized scraping.
-            </motion.p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="bg-white/5 rounded-2xl p-8 border border-white/10 hover:bg-white/10 transition-colors duration-300"
-            >
-              <Lock className="text-accent-cyan mb-4" size={24} />
-              <div className="text-xs uppercase font-bold text-gray-300">Cipher Protocol</div>
-              <div className="text-2xl font-black mt-2">AES-256-CBC</div>
-              <div className="text-gray-300 mt-3 text-sm leading-relaxed">Generates unique keys and initialization vectors (IVs) for every file. Files are stored as encrypted blobs, rendering public links useless.</div>
-            </motion.div>
-            
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="bg-white/5 rounded-2xl p-8 border border-white/10 hover:bg-white/10 transition-colors duration-300"
-            >
-              <Cpu className="text-accent-coral mb-4" size={24} />
-              <div className="text-xs uppercase font-bold text-gray-300">Memory Management</div>
-              <div className="text-2xl font-black mt-2">Streaming Pipelines</div>
-              <div className="text-gray-300 mt-3 text-sm leading-relaxed">Saves file fragments to disk temporary streams, decrypts block-by-block, and cleans up local caches immediately on transfer completion.</div>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="bg-white/5 rounded-2xl p-8 border border-white/10 hover:bg-white/10 transition-colors duration-300"
-            >
-              <Key className="text-accent-cyan mb-4" size={24} />
-              <div className="text-xs uppercase font-bold text-gray-300">Authentication Link</div>
-              <div className="text-2xl font-black mt-2">Token Param Verification</div>
-              <div className="text-gray-300 mt-3 text-sm leading-relaxed">Enables secure token query arguments, authenticating native HTML5 video and document frames that cannot dispatch traditional headers.</div>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Dashboard Modules */}
-      <section className="px-6 py-14">
-        <div className="max-w-[1200px] mx-auto">
-          <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-black uppercase text-ink-dark mb-12 text-center"
-          >
-            System Console Features
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100"
-            >
-              <GraduationCap className="text-accent-cyan mb-4" size={28} />
-              <h3 className="text-xl font-bold mb-2">Learner Workspace</h3>
-              <p className="text-ink-gray text-sm leading-relaxed">Browse the course catalog, enroll directly in selected classes, and view dynamically decrypted videos and course docs in real-time.</p>
-            </motion.div>
-            
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100"
-            >
-              <UploadCloud className="text-accent-coral mb-4" size={28} />
-              <h3 className="text-xl font-bold mb-2">Instructor Dashboard</h3>
-              <p className="text-ink-gray text-sm leading-relaxed">Create courses, manage and delete materials, configure reference pricing, and upload documents with visual progress updates.</p>
-            </motion.div>
-
-            <motion.div 
-              whileHover={{ y: -5 }}
-              className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100"
-            >
-              <Eye className="text-accent-cyan mb-4" size={28} />
-              <h3 className="text-xl font-bold mb-2">Admin Command Center</h3>
-              <p className="text-ink-gray text-sm leading-relaxed">Monitor overall platform state: audit enrolled users, view registered instructors, and list global course enrollment summaries.</p>
-            </motion.div>
-          </div>
-        </div>
-      </section>
-
-      <ServicesCarousel />
-
       {/* Testimonials */}
-      <section className="px-6 py-14">
+      <section className="px-6 py-24 bg-white relative z-10 border-t border-gray-100">
         <div className="max-w-[1200px] mx-auto">
-          <motion.h2 
-            initial={{ opacity: 0, y: -20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-black uppercase text-ink-dark mb-12 text-center"
-          >
-            Verified User Feedback
-          </motion.h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100"
-            >
-              <div className="flex items-center gap-2 text-accent-coral mb-4">
-                <Star size={16} /><Star size={16} /><Star size={16} /><Star size={16} /><Star size={16} />
-              </div>
-              <p className="text-ink-gray text-sm italic leading-relaxed">"The video player is fast, and it is reassuring to know the learning content is securely decrypted directly to my browser."</p>
-              <div className="mt-4 text-xs font-bold text-ink-dark uppercase tracking-wider">— Enrolled Student</div>
-            </motion.div>
-            
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1 }}
-              className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100"
-            >
-              <div className="flex items-center gap-2 text-accent-cyan mb-4">
-                <Star size={16} /><Star size={16} /><Star size={16} /><Star size={16} /><Star size={16} />
-              </div>
-              <p className="text-ink-gray text-sm italic leading-relaxed">"Uploading massive course PDFs and video lessons was remarkably fast due to the built-in browser compression."</p>
-              <div className="mt-4 text-xs font-bold text-ink-dark uppercase tracking-wider">— Course Instructor</div>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2 }}
-              className="bg-white rounded-2xl shadow-soft p-8 border border-gray-100"
-            >
-              <div className="flex items-center gap-2 text-accent-coral mb-4">
-                <Star size={16} /><Star size={16} /><Star size={16} /><Star size={16} /><Star size={16} />
-              </div>
-              <p className="text-ink-gray text-sm italic leading-relaxed">"Security checks on enrollment are solid. Dynamic temp files clean up automatically, which prevents server storage leaks."</p>
-              <div className="mt-4 text-xs font-bold text-ink-dark uppercase tracking-wider">— System Auditor</div>
-            </motion.div>
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-black uppercase text-ink-dark">
+              Creator & Student Feedback
+            </h2>
+            <p className="text-ink-gray mt-3 text-md font-medium">Hear how our community relies on cryptographic shielding for learning.</p>
           </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="px-6 py-14">
-        <div className="max-w-[1200px] mx-auto bg-ink-dark text-white rounded-3xl p-10 md:p-16 relative overflow-hidden premium-border">
-          <div className="bg-ink-dark rounded-3xl p-10 md:p-16">
-            <div className="absolute -top-20 -right-20 w-64 h-64 bg-accent-cyan/20 rounded-full blur-2xl"></div>
-            <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-accent-coral/20 rounded-full blur-2xl"></div>
-            <div className="relative z-10">
-              <h2 className="text-3xl md:text-5xl font-black uppercase mb-4">Protect & Deliver Knowledge</h2>
-              <p className="text-gray-300 text-lg mb-8">Launch secure courses in minutes, encrypt resources, and provide instant material playback to authenticated learners.</p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link to="/register" className="bg-accent-cyan text-white px-8 py-4 rounded-lg font-bold uppercase text-center hover:bg-accent-coral transition-colors flex items-center justify-center gap-2">
-                    Create Account <ChevronRight size={16} />
-                  </Link>
-                </motion.div>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Link to="/courses" className="border border-white/30 px-8 py-4 rounded-lg font-bold uppercase text-center hover:bg-white/10 transition-colors flex items-center justify-center">
-                    Browse Catalog
-                  </Link>
-                </motion.div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-paper-offwhite rounded-2xl p-8 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-1 text-yellow-500 mb-4">
+                <Star size={16} className="fill-yellow-500" />
+                <Star size={16} className="fill-yellow-500" />
+                <Star size={16} className="fill-yellow-500" />
+                <Star size={16} className="fill-yellow-500" />
+                <Star size={16} className="fill-yellow-500" />
               </div>
+              <p className="text-ink-gray text-sm italic leading-relaxed">
+                "The decrypting player is fast. I was initially worried streaming encrypted files might cause lagging, but the chunked streaming works seamlessly in the background."
+              </p>
+              <div className="mt-6 text-xs font-black text-ink-dark uppercase tracking-wider">— Learner Graduate</div>
+            </div>
+
+            <div className="bg-paper-offwhite rounded-2xl p-8 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-1 text-accent-cyan mb-4">
+                <Star size={16} className="fill-accent-cyan" />
+                <Star size={16} className="fill-accent-cyan" />
+                <Star size={16} className="fill-accent-cyan" />
+                <Star size={16} className="fill-accent-cyan" />
+                <Star size={16} className="fill-accent-cyan" />
+              </div>
+              <p className="text-ink-gray text-sm italic leading-relaxed">
+                "As a programming instructor, knowing that my lecture slides and videos cannot be scraped or shared with unauthorized links gives me complete peace of mind."
+              </p>
+              <div className="mt-6 text-xs font-black text-ink-dark uppercase tracking-wider">— Course Instructor</div>
+            </div>
+
+            <div className="bg-paper-offwhite rounded-2xl p-8 border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-1 text-yellow-500 mb-4">
+                <Star size={16} className="fill-yellow-500" />
+                <Star size={16} className="fill-yellow-500" />
+                <Star size={16} className="fill-yellow-500" />
+                <Star size={16} className="fill-yellow-500" />
+                <Star size={16} className="fill-yellow-500" />
+              </div>
+              <p className="text-ink-gray text-sm italic leading-relaxed">
+                "The automatic temp file cleanups on stream closure prevent file leaks. Hibernate auto-migrations upgraded the tables smoothly, allowing seamless stat cascade updates."
+              </p>
+              <div className="mt-6 text-xs font-black text-ink-dark uppercase tracking-wider">— Operations Architect</div>
             </div>
           </div>
         </div>
       </section>
-      
-      {/* Simple Footer */}
-      <footer className="bg-ink-dark text-paper-white py-12 px-6 torn-paper-edge relative z-[2] mt-[-40px]">
-        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center mt-8">
-          <div className="text-2xl font-bold font-heading mb-4 md:mb-0 flex items-center gap-2">
-            <img src="/logo.png" alt="EduNode Logo" className="h-8 w-8 object-contain" />
+
+      {/* Modern Call to Action (CTA) */}
+      <section className="px-6 py-24 relative z-10 max-w-[1200px] mx-auto">
+        <div className="bg-ink-dark text-white rounded-[40px] p-10 md:p-16 relative overflow-hidden shadow-2xl">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-accent-cyan/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent-coral/15 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div className="relative z-10 text-center max-w-[700px] mx-auto space-y-8">
+            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tight">
+              Deliver Knowledge Safely
+            </h2>
+            <p className="text-gray-300 text-lg leading-relaxed font-medium">
+              Create your creator studio or enroll directly to test client file updates, secure storage parameters, and decrypted video streams.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link 
+                to="/register" 
+                className="bg-accent-cyan hover:bg-accent-coral text-white px-8 py-4 rounded-xl font-bold uppercase text-xs tracking-wider transition-all duration-300 shadow-md hover:-translate-y-0.5"
+              >
+                Sign Up Now
+              </Link>
+              <Link 
+                to="/courses" 
+                className="border border-white/20 bg-white/5 hover:bg-white/10 px-8 py-4 rounded-xl font-bold uppercase text-xs tracking-wider transition-all duration-300 hover:-translate-y-0.5"
+              >
+                Explore catalogue
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-ink-dark text-paper-white py-12 px-6 relative z-10 border-t border-white/5">
+        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row justify-between items-center">
+          <div className="text-2xl font-black font-heading mb-4 md:mb-0 flex items-center gap-2">
             Edu<span className="text-accent-cyan">Node</span>
           </div>
           <div className="text-sm font-medium text-gray-400">
-            &copy; {new Date().getFullYear()} EduNode Marketplace. All rights reserved.
+            &copy; {new Date().getFullYear()} EduNode Learning. All rights reserved.
           </div>
         </div>
       </footer>
