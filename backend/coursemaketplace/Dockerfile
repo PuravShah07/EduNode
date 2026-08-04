@@ -4,6 +4,7 @@ WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -B
 COPY src ./src
+RUN cp src/main/resources/application.example.properties src/main/resources/application.properties
 RUN mvn clean package -DskipTests
 
 # Run stage
