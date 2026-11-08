@@ -36,6 +36,7 @@ backend/coursemaketplace/uploads/
 !.env.example
 application.properties
 src/main/resources/application.properties
+docker-compose.yml
 
 # Logs
 *.log
