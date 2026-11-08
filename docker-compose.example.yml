@@ -6,7 +6,7 @@ services:
     container_name: edunode-mysql
     restart: always
     environment:
-      MYSQL_DATABASE: edunode_db
+      MYSQL_DATABASE: <YOUR_DB_NAME>
       MYSQL_USER: <YOUR_DB_USER>
       MYSQL_PASSWORD: <YOUR_DB_PASSWORD>
       MYSQL_ROOT_PASSWORD: <YOUR_ROOT_PASSWORD>
@@ -24,10 +24,15 @@ services:
     depends_on:
       - db
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/edunode_db?useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/<YOUR_DB_NAME>?useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=<YOUR_DB_USER>
       - SPRING_DATASOURCE_PASSWORD=<YOUR_DB_PASSWORD>
       - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - REDIS_HOST=<YOUR_UPSTASH_REDIS_HOST>
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=<YOUR_UPSTASH_REDIS_PASSWORD>
+      - REDIS_SSL_ENABLED=true
 
 volumes:
   mysql_data:
+

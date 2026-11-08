@@ -5,6 +5,9 @@ import com.purav.coursemaketplace.dto.response.CourseResponse;
 import com.purav.coursemaketplace.entity.Course;
 import com.purav.coursemaketplace.entity.User;
 import com.purav.coursemaketplace.repository.CourseRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +23,9 @@ public class CourseService {
         this.courseRepository = courseRepository;
     }
 
+    @Caching(evict = {
+        @CacheEvict(value = "courses", allEntries = true)
+    })
     public CourseResponse createCourse(CourseRequest request, User instructor) {
         Course course = Course.builder()
                 .title(request.getTitle())
@@ -38,9 +44,10 @@ public class CourseService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "courses", key = "#keyword + '_' + #sortBy")
     public List<CourseResponse> getAllCourses(String keyword, String sortBy) {
         Sort sort = Sort.unsorted();
-        
+
         if (sortBy != null) {
             switch (sortBy.toLowerCase()) {
                 case "price_asc":
@@ -71,6 +78,7 @@ public class CourseService {
                 .collect(Collectors.toList());
     }
 
+    @Cacheable(value = "course", key = "#id")
     public CourseResponse getCourseById(Long id) {
         Course course = courseRepository.findById(id)
                 .orElseThrow(() -> new com.purav.coursemaketplace.exception.ResourceNotFoundException("Course not found"));
